@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Deadlock Prevention and Recovery Toolkit</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background: #050816;
+        color: #f5f5f5;
+    }
+    .container {
+        width: 90%;
+        max-width: 1100px;
+        margin: 20px auto 40px auto;
+    }
+    h1 {
+        text-align: center;
+        color: #4ae3ff;
+        text-shadow: 0 0 10px #00eaff;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-size: 22px;
+    }
+    .subtitle {
+        text-align: center;
+        font-size: 13px;
+        color: #b0b7c6;
+        margin-bottom: 18px;
+    }
+    .card {
+        background: #0b1020;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+        border: 1px solid #1c2438;
+    }
+    .card h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #4ae3ff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    label {
+        font-size: 13px;
+        color: #b0b7c6;
+        margin-right: 4px;
+    }
+    input[type="number"] {
+        width: 70px;
+        padding: 5px 7px;
+        border-radius: 6px;
+        border: 1px solid #1c2438;
+        background: #050816;
+        color: #f5f5f5;
+        margin: 3px;
+        font-size: 13px;
+        outline: none;
+    }
+    input[type="number"]:focus {
+        border-color: #4ae3ff;
+        box-shadow: 0 0 4px #4ae3ff;
+    }
+    button {
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        margin: 6px 4px 0 0;
+        font-size: 13px;
+        font-weight: bold;
+        background: #4ae3ff;
+        color: #001018;
+    }
+    button:hover {
+        background: #2fc4dd;
+    }
+    button.secondary {
+        background: transparent;
+        color: #4ae3ff;
+        border: 1px solid #4ae3ff;
+    }
+    button.secondary:hover {
+        background: rgba(74, 227, 255, 0.1);
+    }
+    button.danger {
+        background: #ff5252;
+        color: #fff;
+    }
+    button.danger:hover {
+        background: #ff1744;
+    }
+    button.success {
+        background: #00e676;
+        color: #003300;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 6px;
+        font-size: 13px;
+    }
+    th, td {
+        border: 1px solid #283149;
+        padding: 4px;
+        text-align: center;
+    }
+    th {
+        background: #111726;
+        color: #4ae3ff;
+    }
+    td {
+        background: #050b18;
+    }
+    .matrix-label {
+        font-size: 12px;
+        color: #b0b7c6;
+        margin-top: 4px;
+    }
+    .status-line {
+        font-size: 13px;
+        margin: 4px 0;
+    }
+    .status-good {
+        color: #00e676;
+    }
+    .status-bad {
+        color: #ff5252;
+    }
+    .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        margin: 2px 4px 4px 0;
+    }
+    .tag.safe {
+        background: rgba(0, 230, 118, 0.1);
+        color: #00e676;
+        border: 1px solid #00e676;
+    }
+    .tag.unsafe {
+        background: rgba(255, 82, 82, 0.1);
+        color: #ff5252;
+        border: 1px solid #ff5252;
+    }
+    pre {
+        background: #050816;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 12px;
+        overflow-x: auto;
+        border: 1px solid #1c2438;
+    }
+    .hint {
+        font-size: 11px;
+        color: #b0b7c6;
+        margin-top: 4px;
+    }
+    .two-col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 10px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Deadlock Prevention & Recovery Toolkit</h1>
+    <div class="subtitle">
+        Web-based simulator for Deadlock Detection • Banker’s Algorithm • Recovery with RAG/WFG
+    </div>
+
+    <!-- INPUT SECTION -->
+    <div class="card">
+        <h2>Input Section</h2>
+        <div>
+            <label>Number of Processes (P):</label>
+            <input type="number" id="numProc" min="1" placeholder="e.g. 5">
+            <label>Number of Resources (R):</label>
+            <input type="number" id="numRes" min="1" placeholder="e.g. 3">
+            <button onclick="generateMatrices()">Generate Matrices</button>
+            <button class="secondary" onclick="loadExample53()">Load Example P=5,R=3</button>
+            <button class="secondary" onclick="loadExample55()">Load Example P=5,R=5</button>
+        </div>
+        <div class="hint">
+            First set P and R → click <b>Generate Matrices</b>.  
+            Or directly click an Example button to auto-fill sample values.
+        </div>
+        <div id="matrixInputs"></div>
+    </div>
+
+    <!-- ALGORITHM BUTTONS -->
+    <div class="card">
+        <h2>Algorithms</h2>
+        <button class="success" onclick="runBanker()">Run Banker’s Safety Check</button>
+        <button onclick="runDetection()">Run Deadlock Detection</button>
+        <button class="danger" onclick="runRecovery()">Simulate Recovery</button>
+        <div class="hint">
+            Banker → safe state check • Detection → deadlocked processes • Recovery → victim suggestion.
+        </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="two-col">
+        <div class="card">
+            <h2>System Matrices</h2>
+            <div id="matricesOutput"></div>
+        </div>
+
+        <div class="card">
+            <h2>Deadlock Status</h2>
+            <div id="statusOutput"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>RAG / Wait-For Graph (Text View)</h2>
+        <div id="graphOutput"></div>
+    </div>
+</div>
+
+<script>
+// ============== GENERATE INPUT MATRICES ==================
+function generateMatrices() {
+    const P = parseInt(document.getElementById("numProc").value);
+    const R = parseInt(document.getElementById("numRes").value);
+    const box = document.getElementById("matrixInputs");
+    box.innerHTML = "";
+
+    if (isNaN(P) || isNaN(R) || P <= 0 || R <= 0) {
+        alert("Please enter valid P and R.");
+        return;
+    }
+
+    let html = "";
+
+    // Allocation matrix
+    html += '<div class="matrix-label"><b>Allocation Matrix (Alloc[P][R])</b></div>';
+    html += buildInputMatrix("alloc", P, R);
+
+    // Max matrix
+    html += '<div class="matrix-label"><b>Maximum Matrix (Max[P][R])</b></div>';
+    html += buildInputMatrix("max", P, R);
+
+    // Available vector
+    html += '<div class="matrix-label"><b>Available Vector (Available[R])</b></div>';
+    html += '<table><tr>';
+    for (let j = 0; j < R; j++) html += '<th>R' + j + '</th>';
+    html += '</tr><tr>';
+    for (let j = 0; j < R; j++) {
+        html += '<td><input type="number" id="avail-' + j + '" min="0" value=""></td>';
+    }
+    html += '</tr></table>';
+
+    box.innerHTML = html;
+}
+
+function buildInputMatrix(prefix, P, R) {
+    let html = "<table><tr><th></th>";
+    for (let j = 0; j < R; j++) html += "<th>R" + j + "</th>";
+    html += "</tr>";
+    for (let i = 0; i < P; i++) {
+        html += "<tr><th>P" + i + "</th>";
+        for (let j = 0; j < R; j++) {
+            html += '<td><input type="number" id="' + prefix + '-' + i + '-' + j +
+                    '" min="0" value=""></td>';
+        }
+        html += "</tr>";
+    }
+    html += "</table>";
+    return html;
+}
+
+// ============== EXAMPLE P=5, R=3 ==================
+function loadExample53() {
+    const P = 5, R = 3;
+    document.getElementById("numProc").value = P;
+    document.getElementById("numRes").value = R;
+    generateMatrices();
+
+    const alloc = [
+        [0, 1, 0],
+        [2, 0, 0],
+        [3, 0, 2],
+        [2, 1, 1],
+        [0, 0, 2]
+    ];
+    const max = [
+        [7, 5, 3],
+        [3, 2, 2],
+        [9, 0, 2],
+        [2, 2, 2],
+        [4, 3, 3]
+    ];
+    const avail = [3, 3, 2];
+
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            document.getElementById("alloc-" + i + "-" + j).value = alloc[i][j];
+            document.getElementById("max-" + i + "-" + j).value = max[i][j];
+        }
+    }
+    for (let j = 0; j < R; j++) {
+        document.getElementById("avail-" + j).value = avail[j];
+    }
+}
+
+// ============== EXAMPLE P=5, R=5 ==================
+function loadExample55() {
+    const P = 5, R = 5;
+    document.getElementById("numProc").value = P;
+    document.getElementById("numRes").value = R;
+    generateMatrices();
+
+    const alloc = [
+        [0, 1, 0, 1, 0],
+        [1, 0, 1, 0, 1],
+        [1, 1, 0, 1, 0],
+        [0, 0, 1, 0, 1],
+        [1, 0, 0, 1, 0]
+    ];
+    const max = [
+        [1, 2, 1, 2, 1],
+        [2, 1, 2, 1, 1],
+        [2, 2, 1, 1, 1],
+        [1, 1, 1, 2, 1],
+        [1, 2, 0, 2, 1]
+    ];
+    const avail = [1, 1, 1, 1, 1];
+
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            document.getElementById("alloc-" + i + "-" + j).value = alloc[i][j];
+            document.getElementById("max-" + i + "-" + j).value = max[i][j];
+        }
+    }
+    for (let j = 0; j < R; j++) {
+        document.getElementById("avail-" + j).value = avail[j];
+    }
+}
+
+// ============== READ SYSTEM STATE (STRICT: NO EMPTY) ==================
+function getSystemState() {
+    const P = parseInt(document.getElementById("numProc").value);
+    const R = parseInt(document.getElementById("numRes").value);
+    if (isNaN(P) || isNaN(R) || P <= 0 || R <= 0) {
+        alert("Please set P and R and generate matrices.");
+        return null;
+    }
+
+    let alloc = Array.from({length: P}, () => Array(R).fill(0));
+    let max   = Array.from({length: P}, () => Array(R).fill(0));
+    let avail = Array(R).fill(0);
+
+    // Strict: all cells must be filled
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            const aStr = document.getElementById("alloc-" + i + "-" + j).value;
+            const mStr = document.getElementById("max-" + i + "-" + j).value;
+            if (aStr === "" || mStr === "") {
+                alert("Please fill ALL Allocation and Max cells (P" + i + ", R" + j + ").");
+                return null;
+            }
+            const a = parseInt(aStr);
+            const m = parseInt(mStr);
+            if (isNaN(a) || isNaN(m) || a < 0 || m < 0 || a > m) {
+                alert("Invalid values at P" + i + ", R" + j + ". Need 0 <= Alloc <= Max.");
+                return null;
+            }
+            alloc[i][j] = a;
+            max[i][j] = m;
+        }
+    }
+
+    for (let j = 0; j < R; j++) {
+        const vStr = document.getElementById("avail-" + j).value;
+        if (vStr === "") {
+            alert("Please fill ALL Available entries (R" + j + ").");
+            return null;
+        }
+        const v = parseInt(vStr);
+        if (isNaN(v) || v < 0) {
+            alert("Available[" + j + "] must be a non-negative integer.");
+            return null;
+        }
+        avail[j] = v;
+    }
+
+    return { P, R, alloc, max, avail };
+}
+
+function calculateNeed(max, alloc) {
+    const P = max.length;
+    const R = max[0].length;
+    let need = Array.from({length: P}, () => Array(R).fill(0));
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            need[i][j] = max[i][j] - alloc[i][j];
+        }
+    }
+    return need;
+}
+
+// ============== DISPLAY HELPERS ==================
+function buildMatrixTable(title, matrix, rowPrefix, colPrefix) {
+    if (!matrix) return "";
+    const P = matrix.length;
+    const R = matrix[0].length;
+    let html = '<div class="matrix-label"><b>' + title + '</b></div>';
+    html += "<table><tr><th></th>";
+    for (let j = 0; j < R; j++) html += "<th>" + colPrefix + j + "</th>";
+    html += "</tr>";
+    for (let i = 0; i < P; i++) {
+        html += "<tr><th>" + rowPrefix + i + "</th>";
+        for (let j = 0; j < R; j++) {
+            html += "<td>" + matrix[i][j] + "</td>";
+        }
+        html += "</tr>";
+    }
+    html += "</table>";
+    return html;
+}
+
+function buildVectorTable(title, vec, prefix) {
+    if (!vec) return "";
+    let html = '<div class="matrix-label"><b>' + title + '</b></div>';
+    html += "<table><tr>";
+    for (let j = 0; j < vec.length; j++) html += "<th>" + prefix + j + "</th>";
+    html += "</tr><tr>";
+    for (let j = 0; j < vec.length; j++) html += "<td>" + vec[j] + "</td>";
+    html += "</tr></table>";
+    return html;
+}
+
+// ============== BANKER'S SAFETY CHECK ==================
+function runBanker() {
+    const state = getSystemState();
+    if (!state) return;
+    const { P, R, alloc, max, avail } = state;
+    const need = calculateNeed(max, alloc);
+
+    let matHtml = "";
+    matHtml += buildMatrixTable("Allocation Matrix (Alloc)", alloc, "P", "R");
+    matHtml += buildMatrixTable("Maximum Matrix (Max)", max, "P", "R");
+    matHtml += buildMatrixTable("Need Matrix (Need = Max - Alloc)", need, "P", "R");
+    matHtml += buildVectorTable("Available Vector (Available)", avail, "R");
+    document.getElementById("matricesOutput").innerHTML = matHtml;
+
+    let work = avail.slice();
+    let finish = Array(P).fill(false);
+    let safeSeq = [];
+    let changed = true;
+
+    while (changed) {
+        changed = false;
+        for (let i = 0; i < P; i++) {
+            if (!finish[i]) {
+                let canRun = true;
+                for (let j = 0; j < R; j++) {
+                    if (need[i][j] > work[j]) {
+                        canRun = false;
+                        break;
+                    }
+                }
+                if (canRun) {
+                    for (let j = 0; j < R; j++) work[j] += alloc[i][j];
+                    finish[i] = true;
+                    safeSeq.push("P" + i);
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    let html = '<div class="status-line"><b>Banker’s Algorithm – Safety Check</b></div>';
+    if (finish.every(f => f)) {
+        html += '<div class="tag safe">SAFE STATE</div>';
+        html += '<div class="status-line status-good">System is in a safe state. All processes can finish.</div>';
+        html += '<div class="status-line"><b>Safe Sequence:</b> ' + safeSeq.join(" → ") + '</div>';
+    } else {
+        html += '<div class="tag unsafe">UNSAFE / NO SAFE SEQUENCE</div>';
+        html += '<div class="status-line status-bad">System is not in a safe state. Some processes cannot complete.</div>';
+    }
+    document.getElementById("statusOutput").innerHTML = html;
+
+    generateGraphView(state, need, finish);
+}
+
+// ============== DEADLOCK DETECTION ==================
+function runDetection() {
+    const state = getSystemState();
+    if (!state) return;
+    const { P, R, alloc, max, avail } = state;
+    const need = calculateNeed(max, alloc);
+
+    let matHtml = "";
+    matHtml += buildMatrixTable("Allocation Matrix (Alloc)", alloc, "P", "R");
+    matHtml += buildMatrixTable("Need Matrix (Need)", need, "P", "R");
+    matHtml += buildVectorTable("Available Vector (Available)", avail, "R");
+    document.getElementById("matricesOutput").innerHTML = matHtml;
+
+    let work = avail.slice();
+    let finish = Array(P).fill(false);
+    let changed = true;
+
+    while (changed) {
+        changed = false;
+        for (let i = 0; i < P; i++) {
+            if (!finish[i]) {
+                let canRun = true;
+                for (let j = 0; j < R; j++) {
+                    if (need[i][j] > work[j]) {
+                        canRun = false;
+                        break;
+                    }
+                }
+                if (canRun) {
+                    for (let j = 0; j < R; j++) work[j] += alloc[i][j];
+                    finish[i] = true;
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    const deadlocked = [];
+    for (let i = 0; i < P; i++) if (!finish[i]) deadlocked.push("P" + i);
+
+    let html = '<div class="status-line"><b>Deadlock Detection Result</b></div>';
+    if (deadlocked.length === 0) {
+        html += '<div class="tag safe">NO DEADLOCK</div>';
+        html += '<div class="status-line status-good">No deadlock detected. All processes can eventually complete.</div>';
+    } else {
+        html += '<div class="tag unsafe">DEADLOCK DETECTED</div>';
+        html += '<div class="status-line status-bad">The following processes appear to be deadlocked:</div>';
+        html += '<div class="status-line"><b>Deadlocked Processes:</b> ' + deadlocked.join(", ") + '</div>';
+    }
+    document.getElementById("statusOutput").innerHTML = html;
+
+    generateGraphView(state, need, finish);
+}
+
+// ============== RECOVERY SUGGESTION ==================
+function runRecovery() {
+    const state = getSystemState();
+    if (!state) return;
+    const { P, R, alloc, max, avail } = state;
+    const need = calculateNeed(max, alloc);
+
+    let work = avail.slice();
+    let finish = Array(P).fill(false);
+    let changed = true;
+
+    while (changed) {
+        changed = false;
+        for (let i = 0; i < P; i++) {
+            if (!finish[i]) {
+                let canRun = true;
+                for (let j = 0; j < R; j++) {
+                    if (need[i][j] > work[j]) {
+                        canRun = false;
+                        break;
+                    }
+                }
+                if (canRun) {
+                    for (let j = 0; j < R; j++) work[j] += alloc[i][j];
+                    finish[i] = true;
+                    changed = true;
+                }
+            }
+        }
+    }
+
+    const deadlocked = [];
+    for (let i = 0; i < P; i++) if (!finish[i]) deadlocked.push(i);
+
+    let matHtml = "";
+    matHtml += buildMatrixTable("Allocation Matrix (Alloc)", alloc, "P", "R");
+    matHtml += buildMatrixTable("Maximum Matrix (Max)", max, "P", "R");
+    matHtml += buildMatrixTable("Need Matrix (Need)", need, "P", "R");
+    matHtml += buildVectorTable("Available Vector (Available)", avail, "R");
+    document.getElementById("matricesOutput").innerHTML = matHtml;
+
+    let html = '<div class="status-line"><b>Deadlock Recovery Suggestion</b></div>';
+    if (deadlocked.length === 0) {
+        html += '<div class="tag safe">NO DEADLOCK</div>';
+        html += '<div class="status-line status-good">No deadlock detected – recovery not required.</div>';
+    } else {
+        // choose victim = deadlocked process with max allocated sum
+        let victim = deadlocked[0];
+        let bestSum = -1;
+        deadlocked.forEach(i => {
+            const sum = alloc[i].reduce((a, b) => a + b, 0);
+            if (sum > bestSum) {
+                bestSum = sum;
+                victim = i;
+            }
+        });
+
+        html += '<div class="tag unsafe">RECOVERY NEEDED</div>';
+    html += '<div class="status-line status-bad">Deadlock detected – system can be recovered by terminating or rolling back some processes.</div>';
+        html += '<div class="status-line"><b>Suggested Victim Process:</b> P' + victim + ' (holds most resources among deadlocked processes)</div>';
+    }
+    document.getElementById("statusOutput").innerHTML = html;
+
+    generateGraphView(state, need, finish);
+}
+
+// ============== RAG / WAIT-FOR GRAPH TEXT ==================
+function generateGraphView(state, need, finish) {
+    const { P, R, alloc } = state;
+    let txt = "";
+
+    txt += "Processes: P0..P" + (P - 1) + "\n";
+    txt += "Resources: R0..R" + (R - 1) + "\n\n";
+
+    txt += "Resource Allocation Graph (RAG) Edges:\n";
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            if (alloc[i][j] > 0) {
+                txt += "  R" + j + " → P" + i + "  (Alloc: " + alloc[i][j] + ")\n";
+            }
+        }
+    }
+
+    txt += "\nWait-For Graph (Approximate):\n";
+    txt += "(If Need[Pi][Rj] > 0 and Rj is held by Pk, add edge Pi → Pk)\n\n";
+
+    // holders per resource
+    let holders = {};
+    for (let j = 0; j < R; j++) {
+        holders[j] = [];
+        for (let i = 0; i < P; i++) {
+            if (alloc[i][j] > 0) holders[j].push(i);
+        }
+    }
+
+    let edges = [];
+    for (let i = 0; i < P; i++) {
+        for (let j = 0; j < R; j++) {
+            if (need[i][j] > 0) {
+                holders[j].forEach(k => {
+                    if (k !== i) edges.push("P" + i + " → P" + k);
+                });
+            }
+        }
+    }
+
+    if (edges.length === 0) {
+        txt += "  (No wait-for edges in current state)\n";
+    } else {
+        [...new Set(edges)].forEach(e => {
+            txt += "  " + e + "\n";
+        });
+    }
+
+    txt += "\nFinish Flags (from last analysis):\n";
+    for (let i = 0; i < P; i++) {
+        txt += "  P" + i + ": " + (finish && finish[i] ? "can finish" : "may be stuck") + "\n";
+    }
+
+    document.getElementById("graphOutput").innerHTML = "<pre>" + txt + "</pre>";
+}
+</script>
+</body>
+</html>
